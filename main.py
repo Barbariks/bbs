@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
-import traceback
+from ultralytics import YOLO
 
 def list_windows():
     """
@@ -257,10 +257,15 @@ class App(QMainWindow):
         :param frame: Кадр в формате OpenCV.
         :return: Обработанный кадр.
         """
+        
+        model = YOLO("weights/best.pt")
+
+        results = model(frame)
+        
         # Здесь подключается модель нейросети
         # Например, можно использовать PyTorch, TensorFlow и т. д.
         # Пока просто возвращаем исходный кадр
-        return frame
+        return results[0]
 
     def convert_to_pixmap(self, frame):
         """
