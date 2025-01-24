@@ -1,13 +1,17 @@
 from ultralytics import YOLO
 from roboflow import Roboflow
 import torch 
+import numpy as np
 
+torch.device(0)
 
 model = YOLO("weights/best.pt")
-
+model.to('cpu')
 results = model("c:/Users/kukun/Downloads/HfapG-ZhjC8.jpg")
-results[0].show()
 
+ruslt_np = results[0].numpy()
+
+print(ruslt_np.orig_img)
 """
 #установка дата сета
 rf = Roboflow(api_key="7lPCpGpEFFZwytwZG6vt")

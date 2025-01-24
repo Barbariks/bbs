@@ -11,7 +11,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 from ultralytics import YOLO
+import traceback
 
+
+model = YOLO("weights/best.pt")
 def list_windows():
     """
     Получает список видимых окон и их заголовков.
@@ -73,6 +76,17 @@ def capture_window(hwnd):
         print(f"Ошибка при захвате окна: {e}")
         return None
 
+def convert_yolo_to_opencv(bbox, image_width, image_height):
+        x, y, w, h = bbox
+        x = x * image_width
+        y = y * image_height
+        w = w * image_width
+        h = h * image_height
+        x1 = int(x - w / 2)
+        y1 = int(y - h / 2)
+        x2 = int(x + w / 2)
+        y2 = int(y + h / 2)
+        return x1, y1, x2, y2
 
 class App(QMainWindow):
     def __init__(self):
@@ -81,6 +95,7 @@ class App(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         self.initUI()
+    
 
     def initUI(self):
         # Центральный виджет
@@ -161,7 +176,7 @@ class App(QMainWindow):
         if file_path:
             img = cv2.imread(file_path)
             processed_img = self.process_with_neural_network(img)  # Обработка через нейросеть
-            pixmap = self.convert_to_pixmap(processed_img)
+            pixmap = self.convert_to_pixmap(processed_img.orig_img)
             self.set_resized_image(pixmap)
 
     def load_video(self):
@@ -202,7 +217,7 @@ class App(QMainWindow):
                     continue
 
                 processed_frame = self.process_with_neural_network(frame)  # Обработка через нейросеть
-                pixmap = self.convert_to_pixmap(processed_frame)
+                pixmap = self.convert_to_pixmap(processed_frame.orig_img)
                 self.set_resized_image(pixmap)
                 QApplication.processEvents()
         except Exception as e:
@@ -220,7 +235,7 @@ class App(QMainWindow):
                 if not ret:
                     break
                 processed_frame = self.process_with_neural_network(frame)  # Обработка через нейросеть
-                pixmap = self.convert_to_pixmap(processed_frame)
+                pixmap = self.convert_to_pixmap(processed_frame.orig_img)
                 self.set_resized_image(pixmap)
                 QApplication.processEvents()
             cap.release()
@@ -243,7 +258,7 @@ class App(QMainWindow):
                 if not ret:
                     break
                 processed_frame = self.process_with_neural_network(frame)  # Обработка через нейросеть
-                pixmap = self.convert_to_pixmap(processed_frame)
+                pixmap = self.convert_to_pixmap(processed_frame.orig_img)
                 self.set_resized_image(pixmap)
                 QApplication.processEvents()
             cap.release()
@@ -257,15 +272,15 @@ class App(QMainWindow):
         :param frame: Кадр в формате OpenCV.
         :return: Обработанный кадр.
         """
-        
-        model = YOLO("weights/best.pt")
-
+        print(type(frame))
         results = model(frame)
-        
+        detection = results[0].cpu().numpy()
+        print(type(detection))
+#        detection_bbox = convert_yolo_to_opencv(detection[5], )
         # Здесь подключается модель нейросети
         # Например, можно использовать PyTorch, TensorFlow и т. д.
         # Пока просто возвращаем исходный кадр
-        return results[0]
+        return detection
 
     def convert_to_pixmap(self, frame):
         """
